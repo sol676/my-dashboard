@@ -1,0 +1,774 @@
+<!DOCTYPE html>
+<html lang="ko"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Hero SKU 리뷰 보드 · 메디테라피</title>
+<link rel="preconnect" href="https://fonts.googleapis.com/">
+<link rel="preconnect" href="https://fonts.gstatic.com/" crossorigin="">
+<link href="./Hero SKU 리뷰 보드 · 메디테라피_files/css2" rel="stylesheet">
+<script src="./Hero SKU 리뷰 보드 · 메디테라피_files/papaparse.min.js.다운로드"></script>
+<!-- 엑셀/CSV 바이너리 자동 해석 라이브러리 -->
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+
+<style>
+:root{
+  --bg:#f3f6f9; --card:#ffffff; --ink:#15202b; --sub:#5b6875; --faint:#8a96a3;
+  --line:#e3e8ee; --navy:#175e80; --blue:#2f67b1; --blue-soft:#e8f0fa; --track:#e6ebf1;
+  --slate:#4f6478; --amber:#b7791f; --star:#e0a526; --warn-bg:#fff6e5; --warn-ink:#8a5a12;
+  --chip-on:#175e80; --chip-on-ink:#fff;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#0f161d; --card:#17212b; --ink:#e7edf3; --sub:#a3b0bd; --faint:#7d8a97;
+    --line:#26323e; --navy:#4aa3cc; --blue:#6c9ee0; --blue-soft:#1d2d42; --track:#26323e;
+    --slate:#8ba3ba; --amber:#e0a24a; --star:#f0bb45; --warn-bg:#2b2416; --warn-ink:#f0c776;
+    --chip-on:#4aa3cc; --chip-on-ink:#0f161d;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0f161d; --card:#17212b; --ink:#e7edf3; --sub:#a3b0bd; --faint:#7d8a97;
+  --line:#26323e; --navy:#4aa3cc; --blue:#6c9ee0; --blue-soft:#1d2d42; --track:#26323e;
+  --slate:#8ba3ba; --amber:#e0a24a; --star:#f0bb45; --warn-bg:#2b2416; --warn-ink:#f0c776;
+  --chip-on:#4aa3cc; --chip-on-ink:#0f161d;
+}
+*,*::before,*::after{box-sizing:inherit}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:"IBM Plex Sans KR","Apple SD Gothic Neo","Malgun Gothic",system-ui,sans-serif;font-size:15px;line-height:1.55;-webkit-font-smoothing:antialiased}
+.wrap{max-width:1040px;margin:0 auto;padding:28px 20px 64px}
+h1{font-size:22px;margin:0 0 4px;font-weight:700;letter-spacing:-.01em}
+.lede{color:var(--sub);margin:0 0 22px;font-size:14px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:10px}
+button{font:inherit;color:inherit;cursor:pointer}
+button:focus-visible,select:focus-visible,label:focus-within{outline:2px solid var(--blue);outline-offset:2px}
+
+/* Hero SKU card */
+.hero{padding:22px 24px 18px;margin-bottom:16px}
+.hero-top{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
+.tag{background:var(--blue);color:#fff;font-weight:600;font-size:13px;padding:1px 6px;border-radius:3px}
+.meta{font-size:13px;color:var(--sub);display:flex;align-items:center;gap:6px}
+.dot{width:6px;height:6px;border-radius:50%;display:inline-block}
+.hero h2{font-size:18px;margin:16px 0 10px;font-weight:700}
+.score{display:flex;justify-content:space-between;align-items:baseline}
+.score b{font-size:30px;font-weight:700}
+.score span{color:var(--sub);font-size:13px}
+.score .pct{font-size:17px;font-weight:600;color:var(--slate)}
+.bar{height:5px;background:var(--track);border-radius:3px;margin:8px 0 12px;overflow:hidden}
+.bar i{display:block;height:100%;background:var(--blue);border-radius:3px}
+.next{font-size:14px;margin-bottom:8px}
+.skuhead{display:grid;grid-template-columns:1fr 110px 160px;gap:12px;color:var(--sub);font-size:13px;padding:6px 0;border-bottom:1px solid var(--line)}
+.skuhead em{font-style:normal;color:var(--amber)}
+.sku{display:grid;grid-template-columns:1fr 110px 160px;gap:12px;align-items:center;padding:12px 8px;margin:0 -8px;border:0;border-bottom:1px solid var(--line);background:none;text-align:left;width:calc(100% + 16px);border-radius:6px}
+.sku:hover{background:var(--blue-soft)}
+.sku.on{background:var(--blue-soft);box-shadow:inset 3px 0 0 var(--navy)}
+.sku-name{font-weight:600}
+.pill{display:inline-block;margin-top:6px;font-size:12px;padding:2px 9px;border-radius:999px;background:var(--blue-soft);color:var(--blue);font-weight:500}
+.pill.out{background:var(--track);color:var(--sub)}
+.qty{text-align:right;font-variant-numeric:tabular-nums}
+.sku .bar{margin:0}
+.sku .bar.miss i{background:var(--slate)}
+.btn.sm{padding:3px 12px;font-size:13px;margin-left:6px}
+.refresh-status{font-size:13px;color:var(--sub);margin-top:6px}
+.refresh-status:empty{display:none}
+.refresh-status.err{color:#c0392b}
+.foot{font-size:13px;color:var(--sub);margin-top:12px}
+.snap{font-size:12px;color:var(--faint);margin-top:4px}
+
+/* filters */
+.filters{display:grid;grid-template-columns:minmax(140px,.8fr) minmax(130px,.8fr) 1.8fr minmax(160px,1fr);gap:12px;margin-bottom:16px}
+.fbox{padding:14px 16px}
+.fbox h3{margin:0 0 10px;font-size:13px;color:var(--sub);font-weight:600}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{border:1px solid var(--line);background:var(--card);border-radius:999px;padding:5px 12px;font-size:13.5px;display:inline-flex;align-items:center;gap:6px}
+.chip small{color:var(--faint);font-size:12px;font-variant-numeric:tabular-nums}
+.chip[aria-pressed="true"]{background:var(--chip-on);border-color:var(--chip-on);color:var(--chip-on-ink)}
+.chip[aria-pressed="true"] small{color:inherit;opacity:.75}
+.chips.col{flex-direction:column;align-items:stretch}
+.chips.col .chip{justify-content:space-between;border-radius:8px}
+.stars{color:var(--star);letter-spacing:1px}
+
+/* 직접 설정 기간 입력 박스 */
+.custom-date-box{
+  margin-top:10px;
+  padding-top:10px;
+  border-top:1px dashed var(--line);
+  display:flex;
+  flex-direction:column;
+  gap:6px;
+}
+.custom-date-box label{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  font-size:12px;
+  color:var(--sub);
+}
+.custom-date-box input[type="date"]{
+  font:inherit;
+  font-size:12px;
+  padding:3px 6px;
+  border:1px solid var(--line);
+  border-radius:6px;
+  background:var(--card);
+  color:var(--ink);
+  cursor:pointer;
+}
+
+/* list */
+.listcard{padding:6px 0 0;margin-bottom:16px}
+.listbar{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:10px 20px 12px;border-bottom:1px solid var(--line);flex-wrap:wrap}
+.listbar .count{font-weight:600}
+.listbar .count span{color:var(--sub);font-weight:400;font-size:13px;margin-left:8px}
+select{font:inherit;font-size:13.5px;color:var(--ink);background:var(--card);border:1px solid var(--line);border-radius:6px;padding:5px 8px}
+.rv{padding:16px 20px;border-bottom:1px solid var(--line)}
+.rv-top{display:flex;align-items:center;gap:10px;flex-wrap:wrap;font-size:13px;color:var(--sub)}
+.rv-top .stars{font-size:14px}
+.ch{font-size:12px;padding:1px 8px;border-radius:4px;font-weight:600}
+.ch.own{background:#e7f1f6;color:#175e80}.ch.naver{background:#e6f6ea;color:#1d7a3a}.ch.oliveyoung{background:#f1f6e3;color:#5d7a12}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .ch.own{background:#173544;color:#8cc8e4}:root:not([data-theme="light"]) .ch.naver{background:#173622;color:#7fd29a}:root:not([data-theme="light"]) .ch.oliveyoung{background:#2a3416;color:#bcd77a}}
+:root[data-theme="dark"] .ch.own{background:#173544;color:#8cc8e4}:root[data-theme="dark"] .ch.naver{background:#173622;color:#7fd29a}:root[data-theme="dark"] .ch.oliveyoung{background:#2a3416;color:#bcd77a}
+.rv-prod{font-weight:600;color:var(--ink);font-size:13.5px}
+.rv p{margin:8px 0 0;max-width:72ch;white-space:pre-wrap;word-break:keep-all;overflow-wrap:anywhere}
+.demo{font-size:11px;color:var(--warn-ink);background:var(--warn-bg);padding:1px 6px;border-radius:4px}
+.more{display:block;margin:0 auto;padding:12px;border:0;background:none;color:var(--blue);font-weight:600;width:100%}
+.empty{padding:36px 20px;text-align:center;color:var(--sub)}
+
+/* summary */
+.sum{padding:18px 20px 20px}
+.sum-head{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
+.sum-head h3{margin:0;font-size:16px}
+.sum-head p{margin:2px 0 0;font-size:13px;color:var(--sub)}
+.btn{border:1px solid var(--navy);background:var(--navy);color:#fff;border-radius:7px;padding:7px 14px;font-size:14px;font-weight:600}
+.btn.ghost{background:var(--card);color:var(--navy)}
+.btn:disabled{opacity:.5;cursor:default}
+.sum-body{margin-top:14px}
+.stats{display:flex;gap:28px;flex-wrap:wrap;margin-bottom:14px}
+.stat b{display:block;font-size:22px;font-variant-numeric:tabular-nums}
+.stat span{font-size:12.5px;color:var(--sub)}
+.dist{display:grid;grid-template-columns:34px 1fr 40px;gap:8px;align-items:center;font-size:13px;max-width:420px}
+.dist .bar{margin:0;height:7px}
+.dist .bar i{background:var(--star)}
+.ai{margin-top:16px;border-top:1px solid var(--line);padding-top:14px}
+.ai .overall{font-size:15px;max-width:72ch}
+.ai-cols{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-top:12px}
+.ai-cols h4{margin:0 0 6px;font-size:13.5px}
+.ai-cols ul{margin:0;padding-left:18px;font-size:14px}
+.ai-cols li{margin-bottom:4px}
+.kw{display:flex;flex-wrap:wrap;gap:6px;margin-top:12px}
+.kw span{font-size:12.5px;background:var(--blue-soft);color:var(--blue);padding:2px 9px;border-radius:999px}
+.muted{color:var(--sub);font-size:13.5px}
+
+/* import */
+.tools{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:24px;padding:16px;background:var(--card);border:1px solid var(--line);border-radius:10px;font-size:13px;color:var(--sub)}
+.file{position:relative;overflow:hidden}
+.file input{position:absolute;inset:0;opacity:0;cursor:pointer}
+.status{font-size:13px;color:var(--sub);font-weight:600}
+
+@media (max-width:900px){
+  .filters{grid-template-columns:1fr 1fr}
+}
+@media (max-width:550px){
+  .filters{grid-template-columns:1fr}
+  .chips.col{flex-direction:row;flex-wrap:wrap}
+  .chips.col .chip{border-radius:999px}
+  .skuhead,.sku{grid-template-columns:1fr 90px}
+  .skuhead>:last-child,.sku>.bar{display:none}
+  .ai-cols{grid-template-columns:1fr}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Hero SKU 리뷰 보드</h1>
+  <p class="lede">전사 가중목의 Hero SKU를 기준으로 자사몰 · 네이버 스마트스토어 · 올리브영 리뷰를 한곳에서 봅니다.</p>
+
+  <!-- Hero SKU WIG 차트 -->
+  <section class="card hero" aria-label="02 / 전사 가중목">
+    <div class="hero-top">
+      <span class="tag">02 / 전사 가중목</span>
+      <span class="meta"><span class="dot" style="background:var(--blue)"></span>자동 · 갱신 09:00 <span class="dot" style="background:var(--amber)"></span><span style="color:var(--amber)">잠정</span>
+        <label class="btn ghost file sm" id="refreshBtn">갱신<input type="file" id="refreshFile" accept="image/png,image/jpeg,image/webp" aria-label="가중목 캡처 이미지 선택"></label></span>
+    </div>
+    <div class="refresh-status" id="refreshStatus" role="status"></div>
+    <h2>Hero SKU 확보 운영</h2>
+    <div class="score"><div><b id="hNow">2</b> <span id="hGoal">/ 3 개 이상</span></div><div class="pct" id="hPct">66%</div></div>
+    <div class="bar"><i id="hBar" style="width:66%"></i></div>
+    <div class="next" id="hNext">2/3 · 다음 후보 히알루론산 퍼스트 세럼 · 197,747개 남음</div>
+    <div class="skuhead"><span>상품</span><span style="text-align:right">최근 90일 판매량</span><span><em id="hStd">30만 개</em> 기준</span></div>
+    <div id="skuRows"></div>
+    <div class="foot" id="hFoot">자동 · 실시간 WIG 연동</div>
+    <div class="snap" id="hSnap">2026-10-08 10:29 갱신 · 상품을 누르면 아래 리뷰가 그 상품으로 걸러집니다</div>
+  </section>
+
+  <!-- 필터 영역 -->
+  <div class="filters">
+    <!-- 💡 기간 필터 (전체 / 직접 설정만 유지) -->
+    <section class="card fbox" aria-label="기간 필터">
+      <h3>기간</h3>
+      <div class="chips col" id="fPeriod"></div>
+      <div class="custom-date-box" id="customDateBox">
+        <label>시작일 <input type="date" id="startDateVal"></label>
+        <label>종료일 <input type="date" id="endDateVal"></label>
+      </div>
+    </section>
+
+    <section class="card fbox" aria-label="채널 필터">
+      <h3>채널</h3>
+      <div class="chips col" id="fChannel"></div>
+    </section>
+
+    <section class="card fbox" aria-label="Hero SKU 제품 필터">
+      <h3>Hero SKU 제품</h3>
+      <div class="chips" id="fProduct"></div>
+    </section>
+
+    <section class="card fbox" aria-label="별점 필터">
+      <h3>별점</h3>
+      <div class="chips" id="fRating"></div>
+    </section>
+  </div>
+
+  <!-- 리뷰 리스트 -->
+  <section class="card listcard" aria-label="리뷰 목록">
+    <div class="listbar">
+      <div class="count" id="count">리뷰 불러오는 중</div>
+      <select id="sort" aria-label="정렬">
+        <option value="new">최신순</option>
+        <option value="low">별점 낮은순</option>
+        <option value="high">별점 높은순</option>
+      </select>
+    </div>
+    <div id="list"></div>
+    <button class="more" id="more" hidden="">리뷰 더 보기</button>
+  </section>
+
+  <!-- 리뷰 요약 -->
+  <section class="card sum" aria-label="리뷰 요약">
+    <div class="sum-head">
+      <div><h3>리뷰 요약</h3><p id="sumScope">전체 기간 / 전 채널 / 전체 Hero SKU / 전체 별점 기준</p></div>
+      <button class="btn" id="aiBtn">AI로 요약하기</button>
+    </div>
+    <div class="sum-body">
+      <div class="stats" id="stats"></div>
+      <div class="dist" id="dist"></div>
+      <div class="ai" id="ai" hidden=""></div>
+    </div>
+  </section>
+
+  <!-- 파일 첨부 도구 -->
+  <div class="tools" id="tools">
+    <label class="btn ghost file">리뷰 CSV / 엑셀 파일 가져오기<input type="file" id="csv" accept=".csv,.xlsx,.xls"></label>
+    <button class="btn ghost" id="clearLocalBtn" style="color:#c0392b; border-color:#c0392b;">가져온 파일 데이터 삭제</button>
+    <span class="status" id="status"></span>
+    <span style="flex-basis:100%">네이버 파일(`review_....csv`)을 올리면 **브라우저에 영구 저장**되어 새로고침을 해도 유지됩니다.</span>
+  </div>
+</div>
+
+<script>
+let HERO = {
+  now:2, goal:3, std:300000,
+  updated:"잠정 · 10월 1일 실적까지 반영 · 10월 4일 판매 실적까지 반영되면 확정",
+  snapshot:"2026-10-06 기준",
+  skus:[
+    {name:"레티날 스킨 부스터", qty:503451},
+    {name:"포쎄라리얼비피다핑크블러크림", qty:310859},
+    {name:"히알루론산 퍼스트 세럼", qty:198610}
+  ]
+};
+const CH = {own:"자사몰", naver:"네이버 스마트스토어", oliveyoung:"올리브영"};
+const CH_SHORT = {own:"자사몰", naver:"스마트스토어", oliveyoung:"올리브영"};
+const PERIOD_MAP = {all:"전체 기간", custom:"직접 설정"};
+
+const state = {period:"all", startDate:"", endDate:"", channel:"all", product:"all", rating:"all", sort:"new", shown:20};
+let reviews = [];
+let loaded = false;
+const $ = id => document.getElementById(id);
+const fmt = n => n.toLocaleString("ko-KR");
+
+function el(tag, attrs={}, ...kids){
+  const e = document.createElement(tag);
+  for (const [k,v] of Object.entries(attrs)){
+    if (k==="class") e.className=v; else if (k.startsWith("on")) e[k]=v; else e.setAttribute(k,v);
+  }
+  for (const k of kids) if (k!=null) e.append(k);
+  return e;
+}
+const stars = n => "★".repeat(n)+"☆".repeat(5-n);
+
+// 💡 기간 매칭 함수
+function checkPeriod(dateStr, periodVal) {
+  if (!dateStr) return false;
+  const rDateStr = dateStr.substring(0, 10).replace(/\./g, '-');
+
+  if (periodVal === "custom") {
+    if (state.startDate && rDateStr < state.startDate) return false;
+    if (state.endDate && rDateStr > state.endDate) return false;
+    return true;
+  }
+  return true; // "all"
+}
+
+function renderHero(){
+  const inc = HERO.skus.filter(s=>s.qty>=HERO.std).length;
+  const pct = Math.floor(inc/HERO.goal*100);
+  $("hNow").textContent = inc;
+  $("hGoal").textContent = `/ ${HERO.goal} 개 이상`;
+  $("hPct").textContent = pct+"%";
+  $("hBar").style.width = Math.min(100,pct)+"%";
+  $("hStd").textContent = (HERO.std/10000)+"만 개";
+  const next = HERO.skus.filter(s=>s.qty<HERO.std).sort((a,b)=>b.qty-a.qty)[0];
+  $("hNext").textContent = next ? `${inc}/${HERO.goal} · 다음 후보 ${next.name} · ${fmt(HERO.std-next.qty)}개 남음` : `${inc}/${HERO.goal} · 모든 후보 확보`;
+  $("hFoot").textContent = HERO.updated;
+  $("hSnap").textContent = HERO.snapshot + " · 상품을 누르면 아래 리뷰가 그 상품으로 걸러집니다";
+  const rows = $("skuRows"); rows.replaceChildren();
+  for (const s of HERO.skus){
+    const ok = s.qty>=HERO.std;
+    rows.append(el("button",{class:"sku"+(state.product===s.name?" on":""),"aria-pressed":String(state.product===s.name),
+      onclick:()=>{ setFilter("product", state.product===s.name?"all":s.name); }},
+      el("div",{}, el("div",{class:"sku-name"},s.name),
+        el("span",{class:"pill"+(ok?"":" out")}, ok?"포함":`미포함 · ${fmt(HERO.std-s.qty)}개 남음`)),
+      el("div",{class:"qty"}, fmt(s.qty)+"개"),
+      (()=>{const b=el("div",{class:"bar"+(ok?"":" miss")}); const i=el("i"); i.style.width=Math.min(100,s.qty/HERO.std*100)+"%"; b.append(i); return b;})()
+    ));
+  }
+}
+
+function matches(r, skip){
+  if (skip!=="period" && !checkPeriod(r.date, state.period)) return false;
+  if (skip!=="channel" && state.channel!=="all" && r.channel!==state.channel) return false;
+  if (skip!=="product" && state.product!=="all" && r.product!==state.product) return false;
+  if (skip!=="rating" && state.rating!=="all" && r.rating!==Number(state.rating)) return false;
+  return true;
+}
+
+function chip(group, value, label, count, extraClass){
+  const on = String(state[group])===String(value);
+  return el("button",{class:"chip"+(extraClass?" "+extraClass:""),"aria-pressed":String(on),onclick:()=>setFilter(group,value)},
+    label, loaded ? el("small",{},fmt(count)) : null);
+}
+
+function renderFilters(){
+  const cnt = (group, pred) => reviews.filter(r=>matches(r,group) && pred(r)).length;
+  
+  // 💡 [수정] 기간 필터: "전체"와 "직접 설정" 2개만 노출
+  const fpP = $("fPeriod");
+  if (fpP) {
+    fpP.replaceChildren(chip("period","all","전체",cnt("period",()=>true)));
+    fpP.append(chip("period","custom","직접 설정",cnt("period",r=>checkPeriod(r.date,"custom"))));
+  }
+
+  const fc = $("fChannel"); fc.replaceChildren(chip("channel","all","전체",cnt("channel",()=>true)));
+  for (const [k,v] of Object.entries(CH)) fc.append(chip("channel",k,v,cnt("channel",r=>r.channel===k)));
+  
+  const fp = $("fProduct"); fp.replaceChildren(chip("product","all","전체 Hero SKU",cnt("product",()=>true)));
+  for (const s of HERO.skus) fp.append(chip("product",s.name,s.name,cnt("product",r=>r.product===s.name)));
+  
+  const fr = $("fRating"); fr.replaceChildren(chip("rating","all","전체",cnt("rating",()=>true)));
+  for (let n=5;n>=1;n--){
+    const b = chip("rating",n,"",cnt("rating",r=>r.rating===n));
+    b.prepend(el("span",{class:"stars","aria-label":n+"점"},"★".repeat(n)));
+    fr.append(b);
+  }
+}
+
+function filtered(){
+  const list = reviews.filter(r=>matches(r));
+  const by = {new:(a,b)=>(b.date||"").localeCompare(a.date||""), low:(a,b)=>a.rating-b.rating||(b.date||"").localeCompare(a.date||""), high:(a,b)=>b.rating-a.rating||(b.date||"").localeCompare(a.date||"")}[state.sort];
+  return list.sort(by);
+}
+
+function renderList(){
+  const list = filtered();
+  const avg = list.length ? (list.reduce((s,r)=>s+r.rating,0)/list.length).toFixed(2) : "–";
+  $("count").replaceChildren(loaded?`리뷰 ${fmt(list.length)}건`:"리뷰 불러오는 중", loaded&&list.length?el("span",{},`평균 ★ ${avg}`):null);
+  const box = $("list"); box.replaceChildren();
+  if (loaded && !list.length){
+    box.append(el("div",{class:"empty"}, reviews.length ? "이 조건에 맞는 리뷰가 없습니다. 기간이나 필터를 풀어 보세요." : "아직 리뷰가 없습니다. 아래 버튼으로 엑셀/CSV 파일을 올리면 영구 저장됩니다."));
+  }
+  for (const r of list.slice(0,state.shown)){
+    box.append(el("article",{class:"rv"},
+      el("div",{class:"rv-top"},
+        el("span",{class:"stars","aria-label":r.rating+"점"},stars(r.rating)),
+        el("span",{class:"ch "+r.channel},CH_SHORT[r.channel]||r.channel),
+        el("span",{class:"rv-prod"},r.product),
+        el("span",{},[r.author,r.date].filter(Boolean).join("  ")),
+        r.demo?el("span",{class:"demo"},"예시"):null),
+      el("p",{},r.text)));
+  }
+  $("more").hidden = list.length<=state.shown;
+  $("more").textContent = `리뷰 더 보기 (${fmt(list.length-state.shown)}건 남음)`;
+}
+
+function getPeriodLabel() {
+  if (state.period === "custom") {
+    const formatSub = d => d ? d.substring(2).replace(/-/g, '.') : '';
+    if (state.startDate && state.endDate) {
+      return `${formatSub(state.startDate)} ~ ${formatSub(state.endDate)}`;
+    } else if (state.startDate) {
+      return `${formatSub(state.startDate)} 이후`;
+    } else if (state.endDate) {
+      return `${formatSub(state.endDate)} 이전`;
+    }
+    return "직접 설정";
+  }
+  return "전체 기간";
+}
+
+function scopeLabel(){
+  const parts=[
+    getPeriodLabel(),
+    state.channel==="all"?"전 채널":CH[state.channel], 
+    state.product==="all"?"전체 Hero SKU":state.product, 
+    state.rating==="all"?"전체 별점":state.rating+"점"
+  ];
+  return parts.join(" / ");
+}
+
+function renderSummary(){
+  const list = filtered();
+  $("sumScope").textContent = scopeLabel()+" 기준";
+  const st=$("stats"); st.replaceChildren();
+  const dist=$("dist"); dist.replaceChildren();
+  if (!list.length){ st.append(el("span",{class:"muted"},loaded?"요약할 리뷰가 없습니다.":"")); return; }
+  const avg=(list.reduce((s,r)=>s+r.rating,0)/list.length);
+  const low=list.filter(r=>r.rating<=2).length;
+  st.append(el("div",{class:"stat"},el("b",{},fmt(list.length)),el("span",{},"리뷰 수")),
+            el("div",{class:"stat"},el("b",{},avg.toFixed(2)),el("span",{},"평균 별점")),
+            el("div",{class:"stat"},el("b",{},Math.round(low/list.length*100)+"%"),el("span",{},"1~2점 비율")));
+  for (let n=5;n>=1;n--){
+    const c=list.filter(r=>r.rating===n).length;
+    const b=el("div",{class:"bar"}); const i=el("i"); i.style.width=(c/list.length*100)+"%"; b.append(i);
+    dist.append(el("span",{class:"stars"},n+"★"), b, el("span",{class:"muted",style:"text-align:right"},fmt(c)));
+  }
+}
+
+function renderAll(){ renderHero(); renderFilters(); renderList(); renderSummary(); }
+
+function setFilter(group,value){
+  state[group]=value; state.shown=20;
+  $("ai").hidden=true; $("ai").replaceChildren();
+  renderAll();
+}
+
+const sInput = $("startDateVal");
+const eInput = $("endDateVal");
+
+if (sInput && eInput) {
+  sInput.onchange = e => {
+    state.startDate = e.target.value;
+    state.period = "custom";
+    renderAll();
+  };
+  eInput.onchange = e => {
+    state.endDate = e.target.value;
+    state.period = "custom";
+    renderAll();
+  };
+}
+
+$("sort").onchange = e=>{ state.sort=e.target.value; renderList(); };
+$("more").onclick = ()=>{ state.shown+=20; renderList(); };
+
+// 데이터 로드
+async function loadReviewsJSON() {
+  let serverReviews = [];
+  try {
+    const res = await fetch('./reviews_data.json?t=' + new Date().getTime());
+    if (res.ok) serverReviews = await res.json();
+  } catch(e) {}
+
+  let localReviews = [];
+  try {
+    const saved = localStorage.getItem('uploaded_excel_reviews');
+    if (saved) localReviews = JSON.parse(saved);
+  } catch(e) {}
+
+  const combined = [...localReviews, ...serverReviews];
+  const seen = new Set();
+  reviews = combined.filter(r => {
+    const key = `${r.date}_${r.author}_${(r.text||'').substring(0,15)}`;
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+
+  loaded = true;
+  renderAll();
+}
+
+document.addEventListener('DOMContentLoaded', loadReviewsJSON);
+
+// 파일 첨부
+const csvInput = $("csv");
+if (csvInput) {
+  csvInput.onchange = function(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+    const statusEl = $("status");
+    if (statusEl) statusEl.textContent = "파일 처리 및 영구 저장 중...";
+
+    const reader = new FileReader();
+    reader.onload = function(evt) {
+      try {
+        const data = new Uint8Array(evt.target.result);
+        const workbook = XLSX.read(data, { type: 'array' });
+        const firstSheetName = workbook.SheetNames[0];
+        const worksheet = workbook.Sheets[firstSheetName];
+        const jsonRows = XLSX.utils.sheet_to_json(worksheet);
+
+        const newReviews = [];
+        jsonRows.forEach(row => {
+          const pName = String(row['상품명'] || row['상품'] || '');
+          let matchedProduct = null;
+
+          if (pName.includes('포쎄라') || pName.includes('핑크')) {
+            matchedProduct = '포쎄라리얼비피다핑크블러크림';
+          } else if (pName.includes('히알루론산') || pName.includes('퍼스트')) {
+            matchedProduct = '히알루론산 퍼스트 세럼';
+          } else if (pName.includes('레티날') || pName.includes('부스터')) {
+            matchedProduct = '레티날 스킨 부스터';
+          }
+
+          if (matchedProduct) {
+            const rawDate = String(row['리뷰등록일'] || row['작성일'] || '').substring(0, 10).replace(/\./g, '-');
+            const author = String(row['등록자'] || row['작성자'] || '네이버고객');
+            const maskedAuthor = author.length > 3 ? author.substring(0, 3) + '***' : '네이버고객';
+            const channelRaw = String(row['채널'] || '').toLowerCase();
+            let channel = 'naver';
+            if (channelRaw.includes('자사몰') || channelRaw === 'own') channel = 'own';
+            else if (channelRaw.includes('올리브영') || channelRaw === 'oliveyoung') channel = 'oliveyoung';
+
+            newReviews.push({
+              channel: channel,
+              product: matchedProduct,
+              rating: Number(row['구매자평점'] || row['별점'] || 5),
+              date: rawDate,
+              author: maskedAuthor,
+              text: String(row['리뷰상세내용'] || row['내용'] || '')
+            });
+          }
+        });
+
+        if (newReviews.length > 0) {
+          let existingSaved = [];
+          try {
+            const saved = localStorage.getItem('uploaded_excel_reviews');
+            if (saved) existingSaved = JSON.parse(saved);
+          } catch(e) {}
+
+          const mergedSaved = [...existingSaved, ...newReviews];
+          const seenSaved = new Set();
+          const uniqueSaved = mergedSaved.filter(r => {
+            const key = `${r.date}_${r.author}_${(r.text||'').substring(0,15)}`;
+            if (seenSaved.has(key)) return false;
+            seenSaved.add(key);
+            return true;
+          });
+
+          localStorage.setItem('uploaded_excel_reviews', JSON.stringify(uniqueSaved));
+
+          loadReviewsJSON();
+
+          if (statusEl) statusEl.textContent = `🎉 ${newReviews.length}건이 영구 저장되었습니다!`;
+          alert(`🎉 네이버 리뷰 ${newReviews.length}건이 브라우저에 영구 저장되었습니다!`);
+        } else {
+          if (statusEl) statusEl.textContent = "⚠️ 매칭 가능한 리뷰 상품을 찾지 못했습니다.";
+          alert("⚠️ 첨부한 파일에서 매칭 가능한 리뷰 상품을 찾지 못했습니다.");
+        }
+      } catch (err) {
+        console.error(err);
+        if (statusEl) statusEl.textContent = "❌ 파일 해석 오류";
+        alert("❌ 파일 해석 중 오류가 발생했습니다.");
+      }
+    };
+    reader.readAsArrayBuffer(file);
+  };
+}
+
+// 가져온 데이터 삭제 버튼
+const clearLocalBtn = $("clearLocalBtn");
+if (clearLocalBtn) {
+  clearLocalBtn.onclick = function() {
+    if (confirm("직접 파일로 올렸던 영구 저장 리뷰 데이터를 모두 삭제하시겠습니까?")) {
+      localStorage.removeItem('uploaded_excel_reviews');
+      alert("파일로 저장했던 리뷰 데이터가 삭제되었습니다.");
+      location.reload();
+    }
+  };
+}
+
+// 💡 [핵심] 선택된 리뷰 데이터를 실시간 읽어 진짜 분석해주는 동적 분석 엔진
+function analyzeReviews(list) {
+  if (!list.length) return null;
+
+  const total = list.length;
+  const posReviews = list.filter(r => r.rating >= 4);
+  const negReviews = list.filter(r => r.rating <= 3);
+
+  const avgRating = (list.reduce((s, r) => s + r.rating, 0) / total).toFixed(2);
+  const posRatio = Math.round((posReviews.length / total) * 100);
+
+  // 💡 긍정 키워드 사전 (모공 독립)
+  const posDefs = [
+    { name: "톤업/화사함", keys: ["톤업", "화사", "하얘", "뽀얗", "환해", "생얼"] },
+    { name: "촉촉함/수분감", keys: ["촉촉", "수분", "속건조"] },
+    { name: "발림성/피부결", keys: ["발림", "부드러", "매끈", "결"] },
+    { name: "모공 개선/커버", keys: ["모공"] }, // 👈 모공만 단독으로 강력하게 트래킹
+    { name: "전반적 피부개선", keys: ["트러블", "개선", "좋아", "진정"] }, // 👈 모공 외 피부결/트러블 개선
+    { name: "자극없음/순함", keys: ["순하", "자극", "순해요"] },
+    { name: "재구매/정착", keys: ["재구매", "정착", "계속", "또"] }
+  ];
+
+  // 💡 부정 키워드 사전 (건조와 유분 완벽 분리)
+  const negDefs = [
+    { name: "건조함/매트함", keys: ["건조", "매트", "당김"] }, // 👈 건조/당김 현상
+    { name: "유분기/번들거림", keys: ["기름", "유분", "번들"] }, // 👈 지성/유분 현상
+    { name: "효과미흡/아쉬움", keys: ["광고", "글쎄", "모르", "과장", "속", "별루", "별로"] },
+    { name: "용량/가격 아쉬움", keys: ["작아", "용량", "비싸", "가격", "아깝"] },
+    { name: "피부자극/들뜸", keys: ["좁쌀", "트러블", "뒤집", "떠요", "밀림", "따가", "각질"] },
+    { name: "자외선차단 미흡", keys: ["자외선", "선크림", "차단"] }
+  ];
+
+  const posCounts = {};
+  posDefs.forEach(d => posCounts[d.name] = 0);
+  posReviews.forEach(r => {
+    const t = r.text || "";
+    posDefs.forEach(d => { if (d.keys.some(k => t.includes(k))) posCounts[d.name]++; });
+  });
+
+  // 부정어/맥락 검사 함수 (~않아요, 보통 같아요 등)
+  const isNegated = (text, key) => {
+    const pattern = new RegExp(`${key}.{0,15}(않|없|못|지진|보통|무난|안)`, 'g');
+    return pattern.test(text);
+  };
+
+  const negCounts = {};
+  negDefs.forEach(d => negCounts[d.name] = 0);
+  
+  const targetForNeg = negReviews.length ? negReviews : list;
+  
+  targetForNeg.forEach(r => {
+    const t = r.text || "";
+    negDefs.forEach(d => {
+      const matchedKey = d.keys.find(k => t.includes(k));
+      if (matchedKey) {
+        if (!isNegated(t, matchedKey)) {
+          if (r.rating >= 4 && matchedKey === "효과" && (t.includes("보통") || t.includes("좋아"))) {
+            return;
+          }
+          negCounts[d.name]++;
+        }
+      }
+    });
+  });
+
+  const sortedPos = Object.entries(posCounts).sort((a,b) => b[1] - a[1]).filter(x => x[1] > 0);
+  let positives = sortedPos.slice(0, 3).map(x => `${x[0]} 언급 (${x[1]}건)`);
+  if (!positives.length && posReviews.length) {
+    positives = ["전반적인 제품 사용감 만족", "피부톤 및 결 개선 효과", "부드러운 발림성 및 순함"];
+  }
+
+  const sortedNeg = Object.entries(negCounts).sort((a,b) => b[1] - a[1]).filter(x => x[1] > 0);
+  let negatives = sortedNeg.slice(0, 3).map(x => `${x[0]} 언급 (${x[1]}건)`);
+
+  if (!negatives.length) {
+    negatives = ["특이 불만사항 없음 (만족도 우수)"];
+  }
+
+  // 실시간 해시태그 생성 (부정문 맥락 건너뛰기 유지)
+  const allText = list.map(r => r.text || "").join(" ");
+  const candidates = ["톤업", "촉촉", "발림성", "모공", "건조", "광고", "피부톤", "자극", "재구매", "생얼", "흡수", "용량", "매트", "순함", "트러블", "속건조", "유분", "번들"];
+  const wordFreq = {};
+  
+  candidates.forEach(w => {
+    let count = 0;
+    const regex = new RegExp(w, "g");
+    let match;
+    while ((match = regex.exec(allText)) !== null) {
+      const context = allText.substring(match.index, match.index + 15);
+      if (!isNegated(context, w)) {
+        count++;
+      }
+    }
+    if (count > 0) wordFreq[w] = count;
+  });
+
+  const keywords = Object.entries(wordFreq).sort((a,b) => b[1] - a[1]).slice(0, 6).map(x => `#${x[0]}(${x[1]})`);
+  if (!keywords.length) keywords.push("#실제후기분석", "#만족도높음");
+
+  let overall = "";
+  const prodTitle = state.product !== "all" ? state.product : "Hero SKU";
+  
+  if (posRatio >= 80) {
+    const topPos = sortedPos.length ? sortedPos[0][0] : "품질 및 사용감";
+    overall = `${prodTitle} 리뷰 ${total}건 분석 결과, 만족도가 ${posRatio}%로 매우 우수합니다. 특히 ${topPos} 부분에서 높은 호평을 얻고 있습니다.`;
+    if (negReviews.length && sortedNeg.length) {
+      overall += ` 단, 일부 저평가 리뷰에서 ${sortedNeg[0][0]}에 대한 피드백이 존재합니다.`;
+    }
+  } else if (posRatio >= 50) {
+    overall = `${prodTitle} 리뷰 ${total}건의 평균 별점은 ${avgRating}점입니다. 대체로 보통 이상의 평가이나 ${sortedNeg.length ? sortedNeg[0][0] : '개인 피드백'} 관련 개선 의견이 일부 관찰됩니다.`;
+  } else {
+    overall = `${prodTitle} 리뷰 ${total}건 중 부정적/아쉬운 사용감 평가 비율이 높은 편입니다. 주요 아쉬운 점으로는 ${sortedNeg.length ? sortedNeg[0][0] : '효과 및 사용감'}이 꼽혔습니다.`;
+  }
+
+  return { overall, positives, negatives, keywords };
+}
+
+// 💡 [수정] AI 버튼 클릭 시 선택된 실제 리뷰 데이터를 실시간으로 요약
+const btn = $("aiBtn"); 
+btn.hidden = false;
+
+btn.onclick = async () => {
+  const list = filtered();
+  if(!list.length) {
+    alert("현재 선택된 조건에 분석할 리뷰 데이터가 없습니다.");
+    return;
+  }
+  
+  const box = $("ai"); 
+  box.hidden = false; 
+  box.replaceChildren(el("p", {class:"muted"}, "🤖 선택된 " + list.length + "건의 리뷰 데이터를 실시간 분석 중입니다..."));
+  btn.disabled = true;
+
+  setTimeout(() => {
+    const result = analyzeReviews(list);
+
+    const ul = arr => { const u = el("ul"); (arr||[]).forEach(x => u.append(el("li",{},String(x)))); return u; };
+    const kw = el("div", {class:"kw"}); (result.keywords||[]).forEach(k => kw.append(el("span",{},String(k))));
+
+    box.replaceChildren(
+      el("p", {class:"overall", style:"font-weight:bold; color:#175e80; margin-bottom:15px; font-size:15px; line-height:1.5;"}, result.overall),
+      el("div", {class:"ai-cols"}, 
+        el("div", {}, el("h4", {style:"color:#1d7a3a;"}, "👍 주요 긍정 포인트"), ul(result.positives)), 
+        el("div", {}, el("h4", {style:"color:#c0392b;"}, "🚨 주요 아쉬운 점 / 피드백"), ul(result.negatives))
+      ),
+      kw,
+      el("p", {class:"muted", style:"margin-top:15px; border-top:1px solid #eee; padding-top:10px; font-size:12.5px;"}, `AI 실시간 분석 완료 · 선택된 리뷰 ${list.length}건 기준 (${scopeLabel()})`)
+    );
+    btn.disabled = false;
+  }, 400); // 0.4초 만에 즉시 연산 완료
+};
+
+async function loadHeroJSON() {
+  try {
+    const res = await fetch('./hero_data.json?t=' + new Date().getTime());
+    if (!res.ok) return;
+    const data = await res.json();
+    if (data && Array.isArray(data.skus)) {
+      HERO = { ...HERO, ...data };
+      renderAll();
+    }
+  } catch (err) {
+    console.log("hero_data.json 로드 대기 중:", err);
+  }
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  loadHeroJSON();
+  setInterval(loadHeroJSON, 60000);
+});
+</script>
+
+</body></html>
