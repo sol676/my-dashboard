@@ -647,19 +647,13 @@ function analyzeReviews(list) {
   const negCounts = {};
   negDefs.forEach(d => negCounts[d.name] = 0);
   
-  const targetForNeg = negReviews.length ? negReviews : list;
-  
-  targetForNeg.forEach(r => {
+  // 아쉬운 점/피드백은 3점 이하 리뷰에서만 집계 (4점 이상은 제외)
+  negReviews.forEach(r => {
     const t = r.text || "";
     negDefs.forEach(d => {
       const matchedKey = d.keys.find(k => t.includes(k));
-      if (matchedKey) {
-        if (!isNegated(t, matchedKey)) {
-          if (r.rating >= 4 && matchedKey === "효과" && (t.includes("보통") || t.includes("좋아"))) {
-            return;
-          }
-          negCounts[d.name]++;
-        }
+      if (matchedKey && !isNegated(t, matchedKey)) {
+        negCounts[d.name]++;
       }
     });
   });
