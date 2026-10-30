@@ -131,6 +131,7 @@ select{font:inherit;font-size:13.5px;color:var(--ink);background:var(--card);bor
 .rv-prod{font-weight:600;color:var(--ink);font-size:13.5px}
 .rv p{margin:8px 0 0;max-width:72ch;white-space:pre-wrap;word-break:keep-all;overflow-wrap:anywhere}
 .demo{font-size:11px;color:var(--warn-ink);background:var(--warn-bg);padding:1px 6px;border-radius:4px}
+.more[hidden]{display:none}
 .more{display:block;margin:0 auto;padding:12px;border:0;background:none;color:var(--blue);font-weight:600;width:100%}
 .empty{padding:36px 20px;text-align:center;color:var(--sub)}
 
@@ -660,8 +661,9 @@ function analyzeReviews(list) {
 
   const sortedPos = Object.entries(posCounts).sort((a,b) => b[1] - a[1]).filter(x => x[1] > 0);
   let positives = sortedPos.slice(0, 3).map(x => `${x[0]} 언급 (${x[1]}건)`);
+  // 키워드가 안 잡히면 실제 리뷰에 없는 내용을 지어내지 않고 '전반적 만족'만 표시
   if (!positives.length && posReviews.length) {
-    positives = ["전반적인 제품 사용감 만족", "피부톤 및 결 개선 효과", "부드러운 발림성 및 순함"];
+    positives = [`전반적인 제품 만족 (${posReviews.length}건)`];
   }
 
   const sortedNeg = Object.entries(negCounts).sort((a,b) => b[1] - a[1]).filter(x => x[1] > 0);
@@ -690,14 +692,14 @@ function analyzeReviews(list) {
   });
 
   const keywords = Object.entries(wordFreq).sort((a,b) => b[1] - a[1]).slice(0, 6).map(x => `#${x[0]}(${x[1]})`);
-  if (!keywords.length) keywords.push("#실제후기분석", "#만족도높음");
+  // 리뷰에서 실제로 찾은 키워드만 표시 (없으면 해시태그 영역 비움)
 
   let overall = "";
   const prodTitle = state.product !== "all" ? state.product : "Hero SKU";
   
   if (posRatio >= 80) {
-    const topPos = sortedPos.length ? sortedPos[0][0] : "품질 및 사용감";
-    overall = `${prodTitle} 리뷰 ${total}건 분석 결과, 만족도가 ${posRatio}%로 매우 우수합니다. 특히 ${topPos} 부분에서 높은 호평을 얻고 있습니다.`;
+    overall = `${prodTitle} 리뷰 ${total}건 분석 결과, 만족도가 ${posRatio}%로 매우 우수합니다.`;
+    if (sortedPos.length) overall += ` 특히 ${sortedPos[0][0]} 부분에서 높은 호평을 얻고 있습니다.`;
     if (negReviews.length && sortedNeg.length) {
       overall += ` 단, 일부 저평가 리뷰에서 ${sortedNeg[0][0]}에 대한 피드백이 존재합니다.`;
     }
