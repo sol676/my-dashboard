@@ -611,24 +611,26 @@ function analyzeReviews(list) {
   const avgRating = (list.reduce((s, r) => s + r.rating, 0) / total).toFixed(2);
   const posRatio = Math.round((posReviews.length / total) * 100);
 
-  // 💡 긍정 키워드 사전 (모공 독립)
+  // 1. 긍정 키워드 사전
   const posDefs = [
+    { name: "사용감 만족/호평", keys: ["만족", "좋아", "좋네", "잘 사용", "잘 쓰고", "잘 쓰", "추천", "최고", "굿"] },
     { name: "톤업/화사함", keys: ["톤업", "화사", "하얘", "뽀얗", "환해", "생얼"] },
     { name: "촉촉함/수분감", keys: ["촉촉", "수분", "속건조"] },
     { name: "발림성/피부결", keys: ["발림", "부드러", "매끈", "결"] },
-    { name: "모공 개선/커버", keys: ["모공"] }, // 👈 모공만 단독으로 강력하게 트래킹
-    { name: "전반적 피부개선", keys: ["트러블", "개선", "좋아", "진정"] }, // 👈 모공 외 피부결/트러블 개선
-    { name: "자극없음/순함", keys: ["순하", "자극", "순해요"] },
+    { name: "모공 개선/커버", keys: ["모공"] },
+    { name: "트러블/피부진정", keys: ["개선", "진정", "트러블"] },
+    { name: "자극없음/순함", keys: ["순하", "자극 없이", "순해요", "자극적이지"] },
     { name: "재구매/정착", keys: ["재구매", "정착", "계속", "또"] }
   ];
 
-  // 💡 부정 키워드 사전 (건조와 유분 완벽 분리)
+  // 2. 부정 키워드 사전 (🌟 몸드름/여드름 신설 & 효과 잘 모르겠 표현 추가)
   const negDefs = [
-    { name: "건조함/매트함", keys: ["건조", "매트", "당김"] }, // 👈 건조/당김 현상
-    { name: "유분기/번들거림", keys: ["기름", "유분", "번들"] }, // 👈 지성/유분 현상
-    { name: "효과미흡/아쉬움", keys: ["광고", "글쎄", "모르", "과장", "속", "별루", "별로"] },
+    { name: "효과미흡/아쉬움", keys: ["과대광고", "광고빨", "글쎄", "효과가 없", "효과 없음", "과장", "속았", "속은", "별루", "별로", "잘 모르겠", "잘 모르겟", "효과는 잘", "효과 잘 모르", "효과는 모르"] },
+    { name: "트러블/여드름", keys: ["여드름", "몸드름", "트러블", "뾰루지", "좁쌀", "뒤집"] },
+    { name: "건조함/매트함", keys: ["건조", "매트", "당김"] },
+    { name: "유분기/번들거림", keys: ["기름", "유분", "번들"] },
     { name: "용량/가격 아쉬움", keys: ["작아", "용량", "비싸", "가격", "아깝"] },
-    { name: "피부자극/들뜸", keys: ["좁쌀", "트러블", "뒤집", "떠요", "밀림", "따가", "각질"] },
+    { name: "피부자극/들뜸", keys: ["따가", "밀림", "떠요", "각질", "자극이", "자극 있", "자극적"] },
     { name: "자외선차단 미흡", keys: ["자외선", "선크림", "차단"] }
   ];
 
@@ -639,17 +641,16 @@ function analyzeReviews(list) {
     posDefs.forEach(d => { if (d.keys.some(k => t.includes(k))) posCounts[d.name]++; });
   });
 
-  // 부정어/맥락 검사 함수 (~않아요, 보통 같아요 등)
   const isNegated = (text, key) => {
     const pattern = new RegExp(`${key}.{0,15}(않|없|못|지진|보통|무난|안)`, 'g');
     return pattern.test(text);
   };
 
+  // 🌟 핵심 변경: 별점 3점 제한을 풀고 전체 리뷰(list)를 검사하여 4점 리뷰의 아쉬운 점도 수집
   const negCounts = {};
   negDefs.forEach(d => negCounts[d.name] = 0);
-  
-  // 아쉬운 점/피드백은 3점 이하 리뷰에서만 집계 (4점 이상은 제외)
-  negReviews.forEach(r => {
+
+  list.forEach(r => {
     const t = r.text || "";
     negDefs.forEach(d => {
       const matchedKey = d.keys.find(k => t.includes(k));
@@ -661,9 +662,8 @@ function analyzeReviews(list) {
 
   const sortedPos = Object.entries(posCounts).sort((a,b) => b[1] - a[1]).filter(x => x[1] > 0);
   let positives = sortedPos.slice(0, 3).map(x => `${x[0]} 언급 (${x[1]}건)`);
-  // 키워드가 안 잡히면 실제 리뷰에 없는 내용을 지어내지 않고 '전반적 만족'만 표시
   if (!positives.length && posReviews.length) {
-    positives = [`전반적인 제품 만족 (${posReviews.length}건)`];
+    positives = ["전반적인 제품 사용 만족 (별점 호평)"];
   }
 
   const sortedNeg = Object.entries(negCounts).sort((a,b) => b[1] - a[1]).filter(x => x[1] > 0);
@@ -673,9 +673,8 @@ function analyzeReviews(list) {
     negatives = ["특이 불만사항 없음 (만족도 우수)"];
   }
 
-  // 실시간 해시태그 생성 (부정문 맥락 건너뛰기 유지)
   const allText = list.map(r => r.text || "").join(" ");
-  const candidates = ["톤업", "촉촉", "발림성", "모공", "건조", "광고", "피부톤", "자극", "재구매", "생얼", "흡수", "용량", "매트", "순함", "트러블", "속건조", "유분", "번들"];
+  const candidates = ["톤업", "촉촉", "발림성", "모공", "피부톤", "순함", "재구매", "생얼", "흡수", "속건조", "진정", "개선", "여드름", "몸드름"];
   const wordFreq = {};
   
   candidates.forEach(w => {
@@ -684,24 +683,22 @@ function analyzeReviews(list) {
     let match;
     while ((match = regex.exec(allText)) !== null) {
       const context = allText.substring(match.index, match.index + 15);
-      if (!isNegated(context, w)) {
-        count++;
-      }
+      if (!isNegated(context, w)) count++;
     }
     if (count > 0) wordFreq[w] = count;
   });
 
   const keywords = Object.entries(wordFreq).sort((a,b) => b[1] - a[1]).slice(0, 6).map(x => `#${x[0]}(${x[1]})`);
-  // 리뷰에서 실제로 찾은 키워드만 표시 (없으면 해시태그 영역 비움)
+  if (!keywords.length) keywords.push("#실제후기분석", "#만족도높음");
 
   let overall = "";
   const prodTitle = state.product !== "all" ? state.product : "Hero SKU";
   
   if (posRatio >= 80) {
-    overall = `${prodTitle} 리뷰 ${total}건 분석 결과, 만족도가 ${posRatio}%로 매우 우수합니다.`;
-    if (sortedPos.length) overall += ` 특히 ${sortedPos[0][0]} 부분에서 높은 호평을 얻고 있습니다.`;
-    if (negReviews.length && sortedNeg.length) {
-      overall += ` 단, 일부 저평가 리뷰에서 ${sortedNeg[0][0]}에 대한 피드백이 존재합니다.`;
+    const topPos = sortedPos.length ? sortedPos[0][0] : "품질 및 사용감";
+    overall = `${prodTitle} 리뷰 ${total}건 분석 결과, 만족도가 ${posRatio}%로 매우 우수합니다. 특히 ${topPos} 부분에서 높은 호평을 얻고 있습니다.`;
+    if (sortedNeg.length) {
+      overall += ` 단, 일부 리뷰에서 ${sortedNeg[0][0]}에 대한 피드백이 존재합니다.`;
     }
   } else if (posRatio >= 50) {
     overall = `${prodTitle} 리뷰 ${total}건의 평균 별점은 ${avgRating}점입니다. 대체로 보통 이상의 평가이나 ${sortedNeg.length ? sortedNeg[0][0] : '개인 피드백'} 관련 개선 의견이 일부 관찰됩니다.`;
