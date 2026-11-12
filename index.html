@@ -662,13 +662,13 @@ function analyzeReviews(list) {
   });
 
   const sortedPos = Object.entries(posCounts).sort((a,b) => b[1] - a[1]).filter(x => x[1] > 0);
-  let positives = sortedPos.slice(0, 3).map(x => `${x[0]} 언급 (${x[1]}건)`);
+  let positives = sortedPos.map(x => `${x[0]} 언급 (${x[1]}건)`);
   if (!positives.length && posReviews.length) {
     positives = ["전반적인 제품 사용 만족 (별점 호평)"];
   }
 
   const sortedNeg = Object.entries(negCounts).sort((a,b) => b[1] - a[1]).filter(x => x[1] > 0);
-  let negatives = sortedNeg.slice(0, 3).map(x => `${x[0]} 언급 (${x[1]}건)`);
+  let negatives = sortedNeg.map(x => `${x[0]} 언급 (${x[1]}건)`);
 
   if (!negatives.length) {
     negatives = ["특이 불만사항 없음 (만족도 우수)"];
