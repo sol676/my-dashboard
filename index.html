@@ -125,9 +125,10 @@ select{font:inherit;font-size:13.5px;color:var(--ink);background:var(--card);bor
 .rv-top{display:flex;align-items:center;gap:10px;flex-wrap:wrap;font-size:13px;color:var(--sub)}
 .rv-top .stars{font-size:14px}
 .ch{font-size:12px;padding:1px 8px;border-radius:4px;font-weight:600}
-.ch.own{background:#e7f1f6;color:#175e80}.ch.naver{background:#e6f6ea;color:#1d7a3a}.ch.oliveyoung{background:#f1f6e3;color:#5d7a12}
-@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .ch.own{background:#173544;color:#8cc8e4}:root:not([data-theme="light"]) .ch.naver{background:#173622;color:#7fd29a}:root:not([data-theme="light"]) .ch.oliveyoung{background:#2a3416;color:#bcd77a}}
-:root[data-theme="dark"] .ch.own{background:#173544;color:#8cc8e4}:root[data-theme="dark"] .ch.naver{background:#173622;color:#7fd29a}:root[data-theme="dark"] .ch.oliveyoung{background:#2a3416;color:#bcd77a}
+.ch.own{background:#e7f1f6;color:#175e80}.ch.naver{background:#e6f6ea;color:#1d7a3a}.ch.oliveyoung{background:#f1f6e3;color:#5d7a12}.ch.global{background:#f3ecfa;color:#6b3fa0}
+.orig{margin-top:6px}.orig summary{cursor:pointer;font-size:12px;color:#888}.orig p{color:#888;font-size:13px;margin:4px 0 0}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .ch.own{background:#173544;color:#8cc8e4}:root:not([data-theme="light"]) .ch.naver{background:#173622;color:#7fd29a}:root:not([data-theme="light"]) .ch.oliveyoung{background:#2a3416;color:#bcd77a}:root:not([data-theme="light"]) .ch.global{background:#2e2240;color:#c9a8ef}}
+:root[data-theme="dark"] .ch.own{background:#173544;color:#8cc8e4}:root[data-theme="dark"] .ch.naver{background:#173622;color:#7fd29a}:root[data-theme="dark"] .ch.oliveyoung{background:#2a3416;color:#bcd77a}:root[data-theme="dark"] .ch.global{background:#2e2240;color:#c9a8ef}
 .rv-prod{font-weight:600;color:var(--ink);font-size:13.5px}
 .rv p{margin:8px 0 0;max-width:72ch;white-space:pre-wrap;word-break:keep-all;overflow-wrap:anywhere}
 .demo{font-size:11px;color:var(--warn-ink);background:var(--warn-bg);padding:1px 6px;border-radius:4px}
@@ -183,7 +184,7 @@ select{font:inherit;font-size:13.5px;color:var(--ink);background:var(--card);bor
 <body>
 <div class="wrap">
   <h1>Hero SKU 리뷰 보드</h1>
-  <p class="lede">전사 가중목의 Hero SKU를 기준으로 자사몰 · 네이버 스마트스토어 · 올리브영 리뷰를 한곳에서 봅니다.</p>
+  <p class="lede">전사 가중목의 Hero SKU를 기준으로 자사몰 · 네이버 스마트스토어 · 올리브영 · 글로벌몰 리뷰를 한곳에서 봅니다.</p>
 
   <!-- Hero SKU WIG 차트 -->
   <section class="card hero" aria-label="02 / 전사 가중목">
@@ -278,8 +279,8 @@ let HERO = {
     {name:"히알루론산 퍼스트 세럼", qty:198610}
   ]
 };
-const CH = {own:"자사몰", naver:"네이버 스마트스토어", oliveyoung:"올리브영"};
-const CH_SHORT = {own:"자사몰", naver:"스마트스토어", oliveyoung:"올리브영"};
+const CH = {own:"자사몰", naver:"네이버 스마트스토어", oliveyoung:"올리브영", global:"글로벌몰"};
+const CH_SHORT = {own:"자사몰", naver:"스마트스토어", oliveyoung:"올리브영", global:"글로벌몰"};
 const PERIOD_MAP = {all:"전체 기간", custom:"직접 설정"};
 
 const state = {period:"all", startDate:"", endDate:"", channel:"all", product:"all", rating:"all", sort:"new", shown:20};
@@ -396,7 +397,8 @@ function renderList(){
         el("span",{class:"rv-prod"},r.product),
         el("span",{},[r.author,r.date].filter(Boolean).join("  ")),
         r.demo?el("span",{class:"demo"},"예시"):null),
-      el("p",{},r.text)));
+      el("p",{},r.text),
+      r.original ? el("details",{class:"orig"}, el("summary",{},"원문 보기"+(r.country?" · "+r.country:"")), el("p",{},r.original)) : null));
   }
   $("more").hidden = list.length<=state.shown;
   $("more").textContent = `리뷰 더 보기 (${fmt(list.length-state.shown)}건 남음)`;
@@ -479,6 +481,11 @@ async function loadReviewsJSON() {
     const res = await fetch('./reviews_data.json?t=' + new Date().getTime());
     if (res.ok) serverReviews = await res.json();
   } catch(e) {}
+  // 글로벌몰(meditherapy.co) 리뷰: 별도 파일이라 reviews_data.json 자동 갱신에 덮어써지지 않음
+  try {
+    const gres = await fetch('./global_reviews.json?t=' + new Date().getTime());
+    if (gres.ok) serverReviews = serverReviews.concat(await gres.json());
+  } catch(e) {}
 
   let localReviews = [];
   try {
@@ -540,6 +547,7 @@ if (csvInput) {
             let channel = 'naver';
             if (channelRaw.includes('자사몰') || channelRaw === 'own') channel = 'own';
             else if (channelRaw.includes('올리브영') || channelRaw === 'oliveyoung') channel = 'oliveyoung';
+            else if (channelRaw.includes('글로벌') || channelRaw === 'global') channel = 'global';
 
             newReviews.push({
               channel: channel,
